@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movie Collection</title>
+  
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    h1 { text-align: center; }
+    form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    input {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 8px 16px;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #f0f0f0;
+    }
+    button:hover { background: #e0e0e0; }
+    #message {
+      color: green;
+      margin-bottom: 20px;
+      min-height: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+    th { background: #f5f5f5; }
+  </style>
+</head>
+<body>
+  <h1>Movie Collection</h1>
+
+  <h2>Add Movie</h2>
+  <form id="movieForm">
+    <input type="text" id="title" placeholder="Title" required>
+    <input type="text" id="genre" placeholder="Genre" required>
+    <input type="number" id="year" placeholder="Year" required>
+    <button type="submit">Add Movie</button>
+  </form>
+  <div id="message"></div>
+
+  <h2>Movies</h2>
+  <button onclick="loadMovies()">Load Movies</button>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Title</th>
+        <th>Genre</th>
+        <th>Year</th>
+      </tr>
+    </thead>
+    <tbody id="movieTableBody"></tbody>
+  </table>
+
+  <script>
+    const API_URL = '/api/movies';
+
+    async function loadMovies() {
+      try {
+        const res = await fetch(API_URL);
+        const movies = await res.json();
+
+        const tbody = document.getElementById('movieTableBody');
+        tbody.innerHTML = '';
+
+        movies.forEach(movie => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${movie.id}</td>
+            <td>${movie.title}</td>
+            <td>${movie.genre}</td>
+            <td>${movie.year}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      } catch (err) {
+        console.error('Failed to load movies:', err);
+      }
+    }
+
+    document.getElementById('movieForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const title = document.getElementById('title').value.trim();
+      const genre = document.getElementById('genre').value.trim();
+      const year = document.getElementById('year').value;
+
+      const messageEl = document.getElementById('message');
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, genre, year })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          messageEl.style.color = 'red';
+          messageEl.textContent = err.error || 'Failed to add movie';
+          return;
+        }
+
+        messageEl.style.color = 'green';
+        messageEl.textContent = 'Movie added successfully';
+        document.getElementById('movieForm').reset();
+        loadMovies(); // refresh the list
+      } catch (err) {
+        messageEl.style.color = 'red';
+        messageEl.textContent = 'Error adding movie';
+        console.error(err);
+      }
+    });
+
+    // Load movies when page opens
+    loadMovies();
+  </script>
+</body>
+</html>
